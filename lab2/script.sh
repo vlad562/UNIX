@@ -1,50 +1,66 @@
 #!/bin/sh
-set -e
-
 VOLUME_DIR="/data"
-LOCK_FILE="$VOLUME_DIR/.lock"
+LOCK_FILE="$VOLUME_DIR/lockfile"
 
-CONTAINER_ID=$(dd if=/dev/urandom bs=16 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n' | cut -c1-8)
+# Функция обработки исключений
+exceptions(){
+    echo "Ошибка: $1" >&2
+    exit "${2:-1}"
+}
 
-local_file_counter=0
+cleanUp() {
+    if [ -n "$current_file" ]; then
+        rm -f "$current_file"
+        echo "Удален файл $current_file."
+    fi
+    exit 0  
+}
 
-echo "Контейнер запущен успешно. Уникальный ID: $CONTAINER_ID"
+# Проверка на существование каталога
+[ -d "$VOLUME_DIR" ] || exceptions "каталог $VOLUME_DIR не существует"
+
+# Уникальный ID контейнера
+id_container=$(cat /proc/sys/kernel/random/uuid)
+[ -n "$id_container" ] || exceptions "не удалось получить UUID контейнера"
+
+counter_files=0
+current_file=""
+
+trap cleanUp EXIT HUP INT TERM
+
+echo "Контейнер $id_container запущен."
 
 while true; do
-    created_file_name=""
+    # Счётчик созданных файлов
+    counter_files=$((counter_files + 1))
 
-    exec 9>>"$LOCK_FILE"
-    flock 9
+    # Открываем lock_file как дескриптор 8
+    exec 8>"$LOCK_FILE" || exceptions "Не удается открыть файл $LOCK_FILE"
+    flock -x 8
 
     i=1
-    while [ $i -le 999 ]; do
-        formatted_name=$(printf "%03d" $i)
-        target_path="$VOLUME_DIR/$formatted_name"
+    while true; do
+        NUM=$(printf '%03d' "$i")
+        FILE_PATH="$VOLUME_DIR/$NUM"
 
-        if [ ! -e "$target_path" ]; then
-            local_file_counter=$((local_file_counter + 1))
-
-            echo "$CONTAINER_ID $local_file_counter" > "$target_path"
-
-            created_file_name="$formatted_name"
+       if [ ! -e "$FILE_PATH" ]; then
+            echo "$id_container $counter_files" > "$FILE_PATH"
+            current_file="$FILE_PATH"
             break
         fi
         i=$((i + 1))
     done
 
-    exec 9>&-
+    # Закрываем дескриптор и снимаем блокировку
+    exec 8>&-
 
-    if [ -z "$created_file_name" ]; then
-        echo "Критическая ошибка: закончились свободные имена файлов!"
-        sleep 1
-        continue
-    fi
+    echo "Создан: $current_file"
 
     sleep 1
 
-    if [ -f "$VOLUME_DIR/$created_file_name" ]; then
-        rm -f "$VOLUME_DIR/$created_file_name"
-    fi
+    rm -f "$current_file"
+    echo "Удалён: $current_file"
+    current_file=""
 
     sleep 1
 done
