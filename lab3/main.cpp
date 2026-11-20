@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
     {
         for (const auto &entry : fs::recursive_directory_iterator(folder))
         {
-            // Пропускаем символические ссылки
             if (entry.is_symlink())
                 continue;
 
