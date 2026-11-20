@@ -35,7 +35,6 @@ string fileHash(const fs::path &filePath)
 
 int main(int argc, char *argv[])
 {
-    // Проверяем количество аргументов
     if (argc != 2)
     {
         cerr << "Использование: " << argv[0] << " <каталог>\n";
