@@ -63,7 +63,7 @@ int main()
 
   if (server_fd >= FD_SETSIZE)
   {
-    std::cerr << "server_fd exceeds FD_SETSIZE\n";
+    std::cerr << "server_fd превышает FD_SETSIZE\n";
     close(server_fd);
     sigprocmask(SIG_SETMASK, &original_mask, nullptr);
     return EXIT_FAILURE;
@@ -71,8 +71,7 @@ int main()
 
   int reuse = 1;
 
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR,
-                 &reuse, sizeof(reuse)) == -1)
+  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1)
   {
     perror("setsockopt");
     close(server_fd);
@@ -86,8 +85,7 @@ int main()
   address.sin_addr.s_addr = htonl(INADDR_ANY);
   address.sin_port = htons(port);
 
-  if (bind(server_fd, (struct sockaddr *)&address,
-           sizeof(address)) == -1)
+  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) == -1)
   {
     perror("bind");
     close(server_fd);
@@ -103,8 +101,7 @@ int main()
     return EXIT_FAILURE;
   }
 
-  std::cout << "Server started on port "
-            << port << std::endl;
+  std::cout << "Сервер запущен на порту " << port << std::endl;
 
   while (true)
   {
@@ -122,19 +119,12 @@ int main()
     if (client_fd > max_fd)
       max_fd = client_fd;
 
-    int result = pselect(
-        max_fd + 1,
-        &read_fds,
-        nullptr,
-        nullptr,
-        nullptr,
-        &wait_mask);
+    int result = pselect(max_fd + 1, &read_fds, nullptr, nullptr, nullptr, &wait_mask);
 
     if (was_sighup)
     {
       was_sighup = 0;
-      std::cout << "Received SIGHUP signal!"
-                << std::endl;
+      std::cout << "Получен SIGHUP сигнал!" << std::endl;
     }
 
     if (result == -1)
@@ -147,28 +137,19 @@ int main()
     }
 
     // Проверяем готовность клиента.
-    if (client_fd != -1 &&
-        FD_ISSET(client_fd, &read_fds))
+    if (client_fd != -1 && FD_ISSET(client_fd, &read_fds))
     {
       char buffer[4096];
 
-      ssize_t received = recv(
-          client_fd,
-          buffer,
-          sizeof(buffer),
-          0);
+      ssize_t received = recv(client_fd, buffer, sizeof(buffer), 0);
 
       if (received > 0)
       {
-        std::cout << "Received "
-                  << received
-                  << " bytes from client"
-                  << std::endl;
+        std::cout << "Получено " << received << " байт " << std::endl;
       }
       else if (received == 0)
       {
-        std::cout << "Client disconnected"
-                  << std::endl;
+        std::cout << "Клиет отключен" << std::endl;
 
         close(client_fd);
         client_fd = -1;
@@ -191,10 +172,7 @@ int main()
       struct sockaddr_in client_address{};
       socklen_t client_length = sizeof(client_address);
 
-      int new_fd = accept(
-          server_fd,
-          (struct sockaddr *)&client_address,
-          &client_length);
+      int new_fd = accept(server_fd, (struct sockaddr *)&client_address, &client_length);
 
       if (new_fd == -1)
       {
@@ -207,29 +185,20 @@ int main()
 
       if (new_fd >= FD_SETSIZE)
       {
-        std::cerr << "Descriptor exceeds FD_SETSIZE"
-                  << std::endl;
+        std::cerr << "Дескриптор превышает FD_SETSIZE" << std::endl;
         close(new_fd);
         continue;
       }
 
       char ip[INET_ADDRSTRLEN];
 
-      inet_ntop(
-          AF_INET,
-          &client_address.sin_addr,
-          ip,
-          sizeof(ip));
+      inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
 
-      std::cout << "New connection from "
-                << ip << ":"
-                << ntohs(client_address.sin_port)
-                << std::endl;
+      std::cout << "Новое подключение " << ip << ":" ntohs(client_address.sin_port) << std::endl;
 
       if (client_fd != -1)
       {
-        std::cout << "Connection rejected"
-                  << std::endl;
+        std::cout << "Подключение отклонено" << std::endl;
 
         close(new_fd);
       }
@@ -237,8 +206,7 @@ int main()
       {
         client_fd = new_fd;
 
-        std::cout << "Client accepted"
-                  << std::endl;
+        std::cout << "Клиент принят" << std::endl;
       }
     }
   }
@@ -251,7 +219,7 @@ int main()
   if (sigprocmask(SIG_SETMASK, &original_mask, nullptr) == -1)
   {
     perror("sigprocmask restore");
-    return EXIT_FAILURE;
+    return EXIT_FAILURE;  
   }
 
   return EXIT_SUCCESS;
