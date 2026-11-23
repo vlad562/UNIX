@@ -194,7 +194,7 @@ int main()
 
       inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
 
-      std::cout << "Новое подключение " << ip << ":" ntohs(client_address.sin_port) << std::endl;
+      std::cout << "Новое подключение " << ip << ":" << ntohs(client_address.sin_port) << std::endl;
 
       if (client_fd != -1)
       {
