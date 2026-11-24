@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: node server.js
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: node worker.js
+    depends_on:
+      - redis
+    deploy:
+      replicas: 3
