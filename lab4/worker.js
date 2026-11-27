@@ -41,3 +41,9 @@ async function worker() {
 }
 
 worker()
+  .catch((err) => {
+    process.exitCode = 1;
+  })
+  .finally(() => {
+    process.exit();
+  });
